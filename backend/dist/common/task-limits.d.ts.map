@@ -1,0 +1,1 @@
+{"version":3,"file":"task-limits.d.ts","sourceRoot":"","sources":["../../src/common/task-limits.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,QAAQ,EAAE,MAAM,+BAA+B,CAAA;AAExD,eAAO,MAAM,yBAAyB,IAAI,CAAA;AAC1C,eAAO,MAAM,oBAAoB,KAAK,CAAA;AAEtC,eAAO,MAAM,WAAW,EAAE,MAAM,CAC9B,QAAQ,EACR;IAAE,IAAI,EAAE,MAAM,CAAC;IAAC,WAAW,EAAE,MAAM,CAAA;CAAE,CActC,CAAA"}
