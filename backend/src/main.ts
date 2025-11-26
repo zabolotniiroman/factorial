@@ -30,8 +30,7 @@ async function bootstrap() {
 		.setTitle('FactorialGrid API')
 		.setDescription('Документація API для розподілених обчислень')
 		.setVersion('1.0')
-		.addTag('tasks', 'Операції з задачами')
-		.addTag('auth', 'Авторизація')
+		.addBearerAuth()
 		.build()
 
 	const document = SwaggerModule.createDocument(app, config)
@@ -43,9 +42,6 @@ async function bootstrap() {
 	const port = process.env.PORT || 8080
 	await app.listen(port)
 
-	console.log(
-		`FactorialGrid backend is running on http://localhost:${port}/api`
-	)
 	console.log(
 		`Swagger documentation is available at http://localhost:${port}/api/docs`
 	)

@@ -6,20 +6,23 @@ import {
   Body,
   Query,
   Param,
+  UseGuards,
+	Req,
 } from '@nestjs/common'
 import { TasksService } from './tasks.service'
 import { CreateTaskDto } from './dto/create-task.dto'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  async listTasks(@Query('username') username?: string) {
-    if (!username) {
-      throw new BadRequestException('username is required')
-    }
-    const tasks = await this.tasksService.listTasks(username)
+  async listTasks(@Req() req: any) {
+    const tasks = await this.tasksService.listTasks(req.user.username)
     return tasks.map(task => ({
       id: task.id,
       type: task.type,
@@ -36,13 +39,11 @@ export class TasksController {
 
   @Post()
   async createTask(
-    @Query('username') username: string,
+		@Req() req: any,
     @Body() dto: CreateTaskDto
   ) {
-    if (!username) {
-      throw new BadRequestException('username is required')
-    }
-    const task = await this.tasksService.createTask(username, dto)
+   
+    const task = await this.tasksService.createTask(req.user.username, dto)
     return {
       id: task.id,
       type: task.type,
