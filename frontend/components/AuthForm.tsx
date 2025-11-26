@@ -14,8 +14,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
 		e.preventDefault()
 		setLoading(true)
 		try {
-			const success = await login(username)
-			if (success) {
+			const token = await login(username)
+			if (token) {
+				localStorage.setItem('access_token', token)
 				onLogin({ username, isAuthenticated: true })
 			}
 		} finally {

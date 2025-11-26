@@ -2,33 +2,38 @@ import { Task, TaskStatus, TaskType } from '../types'
 
 const API_URL = 'http://localhost:8080/api'
 
-export const login = async (username: string): Promise<boolean> => {
+export const login = async (username: string): Promise<string | null> => {
 	try {
 		const res = await fetch(`${API_URL}/auth/login`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ username }),
 		})
-		return res.ok
+		if (res.ok) {
+			const data = await res.json()
+			return data.access_token
+		}
+		return null
 	} catch (e) {
 		console.error('Backend connection failed', e)
-		return false
+		return null
+	}
+}
+
+const getAuthHeaders = () => {
+	const token = localStorage.getItem('access_token')
+	return {
+		'Content-Type': 'application/json',
+		Authorization: `Bearer ${token}`,
 	}
 }
 
 export const createTask = async (type: TaskType, n: number): Promise<Task> => {
-	const username = localStorage.getItem('user')
-		? JSON.parse(localStorage.getItem('user')!).username
-		: 'guest'
-
-	const response = await fetch(
-		`${API_URL}/tasks?username=${encodeURIComponent(username)}`,
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ type, input_n: n }),
-		}
-	)
+	const response = await fetch(`${API_URL}/tasks`, {
+		method: 'POST',
+		headers: getAuthHeaders(),
+		body: JSON.stringify({ type, input_n: Number(n) }),
+	})
 
 	if (!response.ok) {
 		const errorData = await response.json()
@@ -36,7 +41,6 @@ export const createTask = async (type: TaskType, n: number): Promise<Task> => {
 	}
 
 	const data = await response.json()
-	// Конвертуємо дати з рядків в Date об'єкти
 	return {
 		...data,
 		createdAt: new Date(data.created_at),
@@ -46,16 +50,13 @@ export const createTask = async (type: TaskType, n: number): Promise<Task> => {
 
 export const getTasks = async (): Promise<Task[]> => {
 	try {
-		const username = localStorage.getItem('user')
-			? JSON.parse(localStorage.getItem('user')!).username
-			: 'guest'
-
-		const response = await fetch(
-			`${API_URL}/tasks?username=${encodeURIComponent(username)}`
-		)
+		const response = await fetch(`${API_URL}/tasks`, {
+			headers: getAuthHeaders(),
+		})
 		if (!response.ok) return []
 		const data = await response.json()
-		// Конвертуємо дані з API в формат фронтенду
+		console.log(data)
+
 		return data.map((task: any) => ({
 			...task,
 			createdAt: new Date(task.created_at),
@@ -70,17 +71,8 @@ export const getTasks = async (): Promise<Task[]> => {
 }
 
 export const cancelTask = async (taskId: string): Promise<void> => {
-	const username = localStorage.getItem('user')
-		? JSON.parse(localStorage.getItem('user')!).username
-		: 'guest'
-
-	await fetch(
-		`${API_URL}/tasks/${taskId}/cancel?username=${encodeURIComponent(
-			username
-		)}`,
-		{
-			method: 'POST',
-		}
-	)
+	await fetch(`${API_URL}/tasks/${taskId}/cancel`, {
+		method: 'POST',
+		headers: getAuthHeaders(),
+	})
 }
-

@@ -28,6 +28,7 @@ const App: React.FC = () => {
 	const handleLogout = () => {
 		setUser(null)
 		localStorage.removeItem('user')
+		localStorage.removeItem('access_token')
 	}
 
 	const fetchTasks = useCallback(async () => {
@@ -36,14 +37,26 @@ const App: React.FC = () => {
 		setTasks(data)
 	}, [user])
 
-	// Poll for updates
+	// Initial load
+	useEffect(() => {
+		if (user) {
+			fetchTasks()
+		}
+	}, [user, fetchTasks])
+
+	// Poll for updates if there are active tasks
 	useEffect(() => {
 		if (!user) return
-		fetchTasks() // Initial load
 
-		const interval = setInterval(fetchTasks, POLLING_INTERVAL)
-		return () => clearInterval(interval)
-	}, [user, fetchTasks])
+		const hasActiveTasks = tasks.some(
+			t => t.status === 'PENDING' || t.status === 'PROCESSING'
+		)
+
+		if (hasActiveTasks) {
+			const interval = setInterval(fetchTasks, POLLING_INTERVAL)
+			return () => clearInterval(interval)
+		}
+	}, [user, fetchTasks, tasks])
 
 	const handleCancel = async (id: string) => {
 		await cancelTask(id)

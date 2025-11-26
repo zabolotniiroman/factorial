@@ -100,7 +100,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onCancel }) => {
 				<div className='mt-2 rounded bg-gray-900 p-2 text-sm font-mono text-green-400 break-all border border-gray-800'>
 					Результат: {task.result}
 					<div className='mt-1 text-xs text-gray-600'>
-						Час: {task.executionTime?.toFixed(5)}с
+						Час: {task.execution_time}с
 					</div>
 				</div>
 			)}
