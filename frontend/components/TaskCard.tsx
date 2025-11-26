@@ -98,7 +98,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onCancel }) => {
 			{/* Result Area */}
 			{task.status === TaskStatus.COMPLETED && (
 				<div className='mt-2 rounded bg-gray-900 p-2 text-sm font-mono text-green-400 break-all border border-gray-800'>
-					Результат: {task.result}
+					Результат: {task.result?.length > 200 ? task.result.slice(0, 200) + '...' : task.result}
 					<div className='mt-1 text-xs text-gray-600'>
 						Час: {task.execution_time}с
 					</div>

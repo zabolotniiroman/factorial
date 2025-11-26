@@ -11,6 +11,11 @@ const data = workerData as Payload
 
 const PROGRESS_STEPS = 500
 
+// Штучна затримка для тестування (в мілісекундах)
+const ARTIFICIAL_DELAY_MS = 15
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
 const emitProgress = (progress: number) => {
   parentPort?.postMessage({
     type: 'progress',
@@ -19,7 +24,7 @@ const emitProgress = (progress: number) => {
   })
 }
 
-const factorial = (n: number) => {
+const factorial = async (n: number) => {
   let result = 1n
   const total = BigInt(n)
   const step = Math.max(1, Math.floor(n / PROGRESS_STEPS))
@@ -27,13 +32,14 @@ const factorial = (n: number) => {
     result *= BigInt(i)
     if (i % step === 0) {
       emitProgress((i / n) * 100)
+      await sleep(ARTIFICIAL_DELAY_MS) // Затримка для тестування
     }
   }
   emitProgress(99)
   return result
 }
 
-const doubleFactorial = (n: number) => {
+const doubleFactorial = async (n: number) => {
   let result = 1n
   const start = n % 2 === 0 ? 2 : 1
   const terms = Math.ceil(n / 2)
@@ -43,13 +49,14 @@ const doubleFactorial = (n: number) => {
     result *= BigInt(value)
     if (idx % step === 0) {
       emitProgress((idx / terms) * 100)
+      await sleep(ARTIFICIAL_DELAY_MS) // Затримка для тестування
     }
   }
   emitProgress(99)
   return result
 }
 
-const superFactorial = (n: number) => {
+const superFactorial = async (n: number) => {
   let result = 1n
   let currentFactorial = 1n
   const step = Math.max(1, Math.floor(n / PROGRESS_STEPS))
@@ -58,25 +65,26 @@ const superFactorial = (n: number) => {
     result *= currentFactorial
     if (i % step === 0) {
       emitProgress((i / n) * 100)
+      await sleep(ARTIFICIAL_DELAY_MS) 
     }
   }
   emitProgress(99)
   return result
 }
 
-const run = () => {
+const run = async () => {
   const startedAt = Date.now()
   try {
     let output: bigint
     switch (data.type) {
       case TaskType.FACTORIAL:
-        output = factorial(data.inputN)
+        output = await factorial(data.inputN)
         break
       case TaskType.DOUBLE_FACTORIAL:
-        output = doubleFactorial(data.inputN)
+        output = await doubleFactorial(data.inputN)
         break
       case TaskType.SUPER_FACTORIAL:
-        output = superFactorial(data.inputN)
+        output = await superFactorial(data.inputN)
         break
       default:
         throw new Error('Unsupported task type')

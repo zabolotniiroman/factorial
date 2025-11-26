@@ -60,13 +60,10 @@ export class TasksController {
 
   @Post(':id/cancel')
   async cancelTask(
-    @Param('id') id: string,
-    @Query('username') username?: string
+		@Req() req: any,
+    @Param('id') id: string  
   ) {
-    if (!username) {
-      throw new BadRequestException('username is required')
-    }
-    const task = await this.tasksService.cancelTask(id, username)
+    const task = await this.tasksService.cancelTask(id, req.user.username)
     return {
       id: task?.id,
       status: task?.status,
