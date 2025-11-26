@@ -59,7 +59,7 @@ export const NewTaskForm: React.FC<NewTaskFormProps> = ({ onTaskCreated }) => {
 						type='number'
 						value={n}
 						onChange={e => setN(Number(e.target.value))}
-						className='w-full rounded-lg bg-gray-700 p-2 text-white border border-gray-600 focus:border-green-500 focus:outline-none'
+						className='w-full rounded-lg bg-gray-700 p-2 text-white border border-gray-600 focus:border-green-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
 						placeholder='Введіть ціле число (напр., 5000)'
 						min='1'
 						required
@@ -102,4 +102,3 @@ export const NewTaskForm: React.FC<NewTaskFormProps> = ({ onTaskCreated }) => {
 		</div>
 	)
 }
-
