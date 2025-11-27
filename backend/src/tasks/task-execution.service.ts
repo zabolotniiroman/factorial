@@ -100,9 +100,13 @@ export class TaskExecutionService implements OnModuleDestroy {
     slot.busy = true
     slot.currentTaskId = task.id
 
+    // Додаємо SERVER_ID щоб бачити, який backend обробляє задачу
+    const serverId = process.env.SERVER_ID || 'unknown'
+    const assignedServer = `${serverId}-${slot.id}`
+
     await this.tasksRepository.update(task.id, {
       status: TaskStatus.PROCESSING,
-      assignedServer: slot.id,
+      assignedServer: assignedServer,
       progress: 1,
     })
 

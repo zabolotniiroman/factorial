@@ -6,12 +6,23 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Ідентифікатор сервера для демонстрації балансування
+  const serverId = process.env.SERVER_ID || 'unknown';
+
   app.enableCors({
     origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
   });
 
   app.setGlobalPrefix('api');
+
+  // Middleware для логування запитів (показує, який сервер обробляє)
+  app.use((req: any, res: any, next: any) => {
+    const method = req.method;
+    const url = req.url;
+    console.log(`[${serverId}] ${method} ${url}`);
+    next();
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -32,22 +43,14 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  // --- ВИПРАВЛЕННЯ ТУТ ---
-  
-  // 1. Змінюємо дефолтний порт на 3000 (щоб співпадало з nginx.conf)
-  const port = process.env.PORT || 3000; 
+  // Порт з environment variable (встановлено в docker-compose.yml)
+  const port = process.env.PORT || 8080; 
 
-  // 2. Додаємо '0.0.0.0' другим аргументом (щоб Docker "відкрив" порт для Nginx)
+  // Слухаємо на 0.0.0.0 щоб Docker міг проксувати запити
   await app.listen(port, '0.0.0.0'); 
 
-  console.log(
-    `Application is running on: ${await app.getUrl()}`
-  );
-  console.log(
-    `Swagger documentation is available at http://localhost:8080/api/docs` 
-    // (Зверніть увагу: в консолі контейнера порт буде 3000, 
-    // але в браузері ви заходите через Nginx на 8080)
-  );
+  console.log(`Application is running on port: ${port}`);
+  console.log(`Access via load balancer: http://localhost:8080/api/docs`);
 }
 
 bootstrap();

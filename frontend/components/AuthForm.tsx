@@ -52,7 +52,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
 						disabled={loading}
 						className='w-full rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 p-3 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50'
 					>
-						{loading ? 'Авторизація...' : 'Підключитися до кластера'}
+						{loading ? 'Авторизація...' : 'Ввійти'}
 					</button>
 				</form>
 				<div className='mt-4 text-center text-xs text-gray-500'>
@@ -62,4 +62,3 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onLogin }) => {
 		</div>
 	)
 }
-

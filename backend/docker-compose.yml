@@ -21,6 +21,7 @@ services:
       DB_PASSWORD: secret
       DB_DATABASE: factorial
       PORT: 8080
+      SERVER_ID: "BACKEND-1"
     depends_on:
       - db
     networks:
@@ -35,6 +36,7 @@ services:
       DB_PASSWORD: secret
       DB_DATABASE: factorial
       PORT: 8080
+      SERVER_ID: "BACKEND-2"
     depends_on:
       - db
     networks:
