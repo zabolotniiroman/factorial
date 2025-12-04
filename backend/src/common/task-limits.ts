@@ -1,7 +1,7 @@
 import { TaskType } from '../tasks/enums/task-type.enum'
 
-export const MAX_CONCURRENT_USER_TASKS = 3
-export const MAX_TOTAL_QUEUE_SIZE = 20
+export const MAX_CONCURRENT_USER_TASKS = 6
+export const MAX_TOTAL_QUEUE_SIZE = 100
 
 export const TASK_LIMITS: Record<
   TaskType,

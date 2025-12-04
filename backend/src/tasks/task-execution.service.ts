@@ -30,34 +30,28 @@ export class TaskExecutionService implements OnModuleDestroy {
     { id: 'worker-alpha', busy: false },
     { id: 'worker-beta', busy: false },
   ]
-  private readonly queue: Task[] = []
+  // Removed in-memory queue
   private roundRobinIndex = 0
   private readonly cancelledTasks = new Set<string>()
+  private pollingInterval: NodeJS.Timeout
 
   constructor(
     @InjectRepository(Task)
     private readonly tasksRepository: Repository<Task>
-  ) {}
-
-  async enqueueTask(task: Task) {
-    this.queue.push(task)
-    this.logger.log(`Task ${task.id} queued. Queue size: ${this.queue.length}`)
-    await this.tryDispatch()
+  ) {
+    this.startPolling()
   }
 
-  async cancelTask(taskId: string) {
-    const queueIndex = this.queue.findIndex(t => t.id === taskId)
-    if (queueIndex >= 0) {
-      this.queue.splice(queueIndex, 1)
-      await this.tasksRepository.update(taskId, {
-        status: TaskStatus.CANCELLED,
-        progress: 0,
-        assignedServer: null,
-      })
-      this.logger.warn(`Task ${taskId} cancelled while in queue`)
-      return
-    }
+  private startPolling() {
+    this.pollingInterval = setInterval(() => {
+      this.tryDispatch()
+    }, 1000) // Poll every second
+  }
 
+  // Removed enqueueTask - tasks are now pulled from DB
+
+  async cancelTask(taskId: string) {
+    // Check if task is running on a worker
     const slot = this.workerSlots.find(w => w.currentTaskId === taskId)
     if (slot?.worker) {
       this.cancelledTasks.add(taskId)
@@ -67,21 +61,50 @@ export class TaskExecutionService implements OnModuleDestroy {
         progress: 0,
       })
       this.logger.warn(`Task ${taskId} cancelled on ${slot.id}`)
+      return
     }
+
+    // If not running, just update DB (it might be PENDING in DB)
+    await this.tasksRepository.update(taskId, {
+        status: TaskStatus.CANCELLED,
+        progress: 0,
+        assignedServer: null,
+    })
+    this.logger.log(`Task ${taskId} cancelled in DB`)
   }
 
   private async tryDispatch() {
-    while (this.queue.length > 0) {
-      const slot = this.nextAvailableSlot()
-      if (!slot) {
-        return
-      }
-      const task = this.queue.shift()
-      if (!task) {
-        return
-      }
-      await this.startTaskOnWorker(slot, task)
+    const slot = this.nextAvailableSlot()
+    if (!slot) {
+      return
     }
+
+    // Try to get a task from DB with locking
+    const task = await this.fetchNextPendingTask()
+    if (!task) {
+      return
+    }
+
+    await this.startTaskOnWorker(slot, task)
+  }
+
+  private async fetchNextPendingTask(): Promise<Task | null> {
+    return this.tasksRepository.manager.transaction(async manager => {
+      // SELECT * FROM tasks WHERE status = 'PENDING' ORDER BY created_at ASC LIMIT 1 FOR UPDATE SKIP LOCKED
+      const task = await manager
+        .createQueryBuilder(Task, 'task')
+        .setLock('pessimistic_write')
+        .setOnLocked('skip_locked')
+        .where('task.status = :status', { status: TaskStatus.PENDING })
+        .orderBy('task.createdAt', 'ASC')
+        .getOne()
+
+      if (task) {
+         await manager.update(Task, task.id, { status: TaskStatus.PROCESSING })
+         task.status = TaskStatus.PROCESSING
+      }
+      return task
+    })
   }
 
   private nextAvailableSlot(): WorkerSlot | null {
@@ -100,12 +123,10 @@ export class TaskExecutionService implements OnModuleDestroy {
     slot.busy = true
     slot.currentTaskId = task.id
 
-    // Додаємо SERVER_ID щоб бачити, який backend обробляє задачу
     const serverId = process.env.SERVER_ID || 'unknown'
     const assignedServer = `${serverId}-${slot.id}`
 
     await this.tasksRepository.update(task.id, {
-      status: TaskStatus.PROCESSING,
       assignedServer: assignedServer,
       progress: 1,
     })
@@ -160,6 +181,7 @@ export class TaskExecutionService implements OnModuleDestroy {
         )
       }
       this.cleanupSlot(slot)
+      // Immediately try to dispatch next task after one finishes
       await this.tryDispatch()
     })
   }
@@ -241,9 +263,9 @@ export class TaskExecutionService implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    clearInterval(this.pollingInterval)
     await Promise.all(
       this.workerSlots.map(slot => slot.worker?.terminate() ?? Promise.resolve())
     )
   }
 }
-

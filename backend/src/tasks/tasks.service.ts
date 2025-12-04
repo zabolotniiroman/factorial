@@ -43,7 +43,7 @@ export class TasksService {
 		})
 		
 		const saved = await this.tasksRepository.save(task)
-		await this.executionService.enqueueTask(saved)
+		// await this.executionService.enqueueTask(saved) - Removed, workers now poll DB
 		return saved
 	}
 
